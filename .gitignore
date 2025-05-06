@@ -1,1 +1,6 @@
 scan-env/
+
+./Scans
+./Redactions
+./OCR
+./redaction-overlays
