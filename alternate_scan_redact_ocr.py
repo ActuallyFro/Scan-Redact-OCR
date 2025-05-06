@@ -136,7 +136,7 @@ class FormScanner:
         # Get number of forms to scan
         while True:
             try:
-                self.num_forms = int(input("How many forms to scan? "))
+                self.num_forms = int(input("How many forms to scan (total count, including front/back)? "))
                 if self.num_forms > 0:
                     break
                 print("Please enter a positive number.")
@@ -149,6 +149,7 @@ class FormScanner:
             # Build scanimage command
             cmd = [
                 'scanimage',
+                '--progress',
                 '-d', self.scanner_id,
                 '--format=png',
                 '--resolution=300',

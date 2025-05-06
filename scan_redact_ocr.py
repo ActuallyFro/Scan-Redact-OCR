@@ -59,9 +59,15 @@ class FormScanner:
                 except ValueError:
                     print("Please enter a number.")
         
-        self.scanner = sane.open(self.devices[device_num][0])
-        print(f"Using scanner: {self.devices[device_num][1]}")
-        
+        try:
+            self.scanner = sane.open(self.devices[device_num][0])
+            print(f"Using scanner: {self.devices[device_num][1]}")
+        except Exception as e:
+            print(f"Error opening scanner: {e}")
+            print("This scanner may not be compatible with python-sane.")
+            print("Try using the alternative_scanner.py script instead.")
+            sys.exit(1)
+
         # Check if duplex scanning is available
         self.duplex_available = False
         try:
