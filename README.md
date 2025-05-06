@@ -150,3 +150,22 @@ The script will generate files with the following naming convention:
 - The script verifies if duplex scanning is available before offering the option.
 - Redacted files retain the original image quality while protecting privacy data.
 - OCR results are provided in both text and searchable PDF formats.
+
+## ERRORs - Protips
+
+### 1. Ensure you are in the Python env!
+
+If you See:
+```
+Traceback (most recent call last):
+  File "/home/numbat/My_Programming/OCR-Scanner-Form2s/./scan_redact_ocr.py", line 23, in <module>
+    import sane
+ModuleNotFoundError: No module named 'sane'
+```
+
+THEN -- ensure you run: `source scan-env/bin/activate`
+
+### 2. Cannot locate scanner (when re-using the app)
+
+THIS IS AS-IS Software! -- With that, there's a sane-scanner interface, or I/O disconnect bug. SO... "turn it off, and on again" has worked for my scanner to reuse the app!
+
