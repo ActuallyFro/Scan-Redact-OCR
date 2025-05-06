@@ -35,9 +35,15 @@ class FormScanner:
         """Initialize the scanner application."""
         self.today = datetime.datetime.now().strftime("%Y-%m-%d")
         self.create_directories()
+        self.wid = ""
+        self.form_type = ""
+        self.perform_ocr = True
         
         # Initialize SANE
+        print("\n" + "="*70)
         print("Initializing scanner...")
+        print("="*70 + "\n")
+        
         sane.init()
         self.devices = sane.get_devices()
         if not self.devices:
@@ -91,14 +97,51 @@ class FormScanner:
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
 
+    def setup_initial_preferences(self):
+        """Get initial preferences from the user."""
+        print("\n" + "="*70)
+        print("Setting up preferences...")
+        print("="*70 + "\n")
+        
+        # Ask if OCR is wanted
+        while True:
+            ocr_choice = input("Do you want to perform OCR on scanned forms? [Y/n]: ").lower()
+            if ocr_choice in ['', 'y', 'n']:
+                self.perform_ocr = ocr_choice != 'n'
+                break
+            print("Please enter 'y' for yes or 'n' for no, or press Enter for default (yes).")
+        
+        print(f"\nOCR processing is {'enabled' if self.perform_ocr else 'disabled'}.")
+
     def get_form_info(self):
         """Get form information from the user."""
-        while True:
-            self.wid = input("Enter WID (10-digit student number): ")
-            if len(self.wid) == 10 and self.wid.isdigit():
-                break
-            print("WID must be a 10-digit number. Please try again.")
+        print("\n" + "-"*70)
+        print("Form information")
+        print("-"*70 + "\n")
         
+        # For WID, allow reusing the previous one
+        if self.wid:
+            wid_input = input(f"Enter WID (10-digit student number) or press Enter to use [{self.wid}]: ")
+            if not wid_input:
+                # Keep the existing WID
+                pass
+            elif len(wid_input) == 10 and wid_input.isdigit():
+                self.wid = wid_input
+            else:
+                while True:
+                    wid_input = input("WID must be a 10-digit number. Please try again: ")
+                    if len(wid_input) == 10 and wid_input.isdigit():
+                        self.wid = wid_input
+                        break
+        else:
+            # First time, require a valid WID
+            while True:
+                self.wid = input("Enter WID (10-digit student number): ")
+                if len(self.wid) == 10 and self.wid.isdigit():
+                    break
+                print("WID must be a 10-digit number. Please try again.")
+        
+        # Form type
         while True:
             form_type = input("Enter Form Type (2 or 3): ")
             if form_type in ['2', '3']:
@@ -109,23 +152,13 @@ class FormScanner:
         # Determine scanning mode
         if self.duplex_available:
             while True:
-                mode = input("Use duplex scanning? (y/n): ").lower()
-                if mode in ['y', 'n']:
-                    self.use_duplex = (mode == 'y')
+                mode = input("Use duplex scanning? [Y/n]: ").lower()
+                if mode in ['', 'y', 'n']:
+                    self.use_duplex = (mode != 'n')
                     break
-                print("Please enter 'y' for yes or 'n' for no.")
+                print("Please enter 'y' for yes or 'n' for no, or press Enter for default (yes).")
         else:
             self.use_duplex = False
-            
-        # Get number of forms to scan
-        while True:
-            try:
-                self.num_forms = int(input("How many forms to scan? "))
-                if self.num_forms > 0:
-                    break
-                print("Please enter a positive number.")
-            except ValueError:
-                print("Please enter a number.")
 
     def configure_scanner(self):
         """Configure scanner settings for form scanning."""
@@ -162,76 +195,79 @@ class FormScanner:
                 print("Falling back to simplex (single-sided) scanning.")
 
     def scan_documents(self):
-        """Scan documents and save them to the Scans directory."""
+        """Scan a single document (front and back) and save them to the Scans directory."""
+        print("\n" + "-"*70)
+        print("Scanning document")
+        print("-"*70 + "\n")
+        
         self.configure_scanner()
         scanned_files = []
         
-        for form_num in range(1, self.num_forms + 1):
-            print(f"\nPreparing to scan form {form_num} of {self.num_forms}")
+        if self.use_duplex:
+            # In duplex mode, we scan both sides at once
+            input("Place the form in the scanner and press Enter to scan both sides...")
             
-            if self.use_duplex:
-                # In duplex mode, we scan both sides at once
-                input("Place the form in the scanner and press Enter to scan both sides...")
+            try:
+                print("Scanning...")
+                self.scanner.start()
+                image = self.scanner.snap()
                 
+                # Save front side
+                filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_front.png"
+                image.save(filename_front)
+                scanned_files.append(filename_front)
+                print(f"Front saved to: {filename_front}")
+                
+                # For duplex scanning, we should get a second image automatically
                 try:
-                    print("Scanning...")
-                    self.scanner.start()
-                    image = self.scanner.snap()
-                    
-                    # Save front side
-                    filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_form{form_num}_front.png"
-                    image.save(filename_front)
-                    scanned_files.append(filename_front)
-                    print(f"Front saved to: {filename_front}")
-                    
-                    # For duplex scanning, we should get a second image automatically
-                    try:
-                        image_back = self.scanner.snap()
-                        filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_form{form_num}_back.png"
-                        image_back.save(filename_back)
-                        scanned_files.append(filename_back)
-                        print(f"Back saved to: {filename_back}")
-                    except Exception as e:
-                        print(f"Error scanning back side: {e}")
-                        print("You may need to scan the back side separately.")
-                        
-                except Exception as e:
-                    print(f"Error during scanning: {e}")
-                    
-            else:
-                # In simplex mode, we scan front and back separately
-                input("Place the FRONT of the form in the scanner and press Enter...")
-                
-                try:
-                    print("Scanning front...")
-                    self.scanner.start()
-                    image = self.scanner.snap()
-                    filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_form{form_num}_front.png"
-                    image.save(filename_front)
-                    scanned_files.append(filename_front)
-                    print(f"Front saved to: {filename_front}")
-                except Exception as e:
-                    print(f"Error scanning front: {e}")
-                    continue
-                
-                input("Place the BACK of the form in the scanner and press Enter...")
-                
-                try:
-                    print("Scanning back...")
-                    self.scanner.start()
-                    image = self.scanner.snap()
-                    filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_form{form_num}_back.png"
-                    image.save(filename_back)
+                    image_back = self.scanner.snap()
+                    filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_back.png"
+                    image_back.save(filename_back)
                     scanned_files.append(filename_back)
                     print(f"Back saved to: {filename_back}")
                 except Exception as e:
-                    print(f"Error scanning back: {e}")
+                    print(f"Error scanning back side: {e}")
+                    print("You may need to scan the back side separately.")
+                    
+            except Exception as e:
+                print(f"Error during scanning: {e}")
+                
+        else:
+            # In simplex mode, we scan front and back separately
+            input("Place the FRONT of the form in the scanner and press Enter...")
+            
+            try:
+                print("Scanning front...")
+                self.scanner.start()
+                image = self.scanner.snap()
+                filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_front.png"
+                image.save(filename_front)
+                scanned_files.append(filename_front)
+                print(f"Front saved to: {filename_front}")
+            except Exception as e:
+                print(f"Error scanning front: {e}")
+            
+            input("Place the BACK of the form in the scanner and press Enter...")
+            
+            try:
+                print("Scanning back...")
+                self.scanner.start()
+                image = self.scanner.snap()
+                filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_back.png"
+                image.save(filename_back)
+                scanned_files.append(filename_back)
+                print(f"Back saved to: {filename_back}")
+            except Exception as e:
+                print(f"Error scanning back: {e}")
         
-        self.scanner.close()
         return scanned_files
 
     def apply_redactions(self, scanned_files):
         """Apply redaction overlays to scanned images."""
+        print("\n" + "-"*70)
+        print("Applying redactions")
+        print("-"*70 + "\n")
+        
         redacted_files = []
         
         # Check if redaction overlays exist
@@ -271,8 +307,12 @@ class FormScanner:
         
         return redacted_files
 
-    def perform_ocr(self, redacted_files):
+    def perform_ocr_process(self, redacted_files):
         """Perform OCR on redacted files and save as text and PDF."""
+        print("\n" + "-"*70)
+        print("Performing OCR")
+        print("-"*70 + "\n")
+        
         for redacted_path in redacted_files:
             try:
                 # Extract text using Tesseract
@@ -299,34 +339,68 @@ class FormScanner:
             except Exception as e:
                 print(f"Error performing OCR on {redacted_path}: {e}")
 
-    def process(self):
-        """Run the complete scanning, redaction, and OCR process."""
-        print("=== Form Scanner, Redactor, and OCR Tool ===")
-        
+    def process_single_form(self):
+        """Process a single form through scanning, redaction, and optional OCR."""
         self.get_form_info()
         scanned_files = self.scan_documents()
         
         if scanned_files:
-            print("\n=== Applying Redactions ===")
             redacted_files = self.apply_redactions(scanned_files)
             
-            if redacted_files:
-                print("\n=== Performing OCR ===")
-                self.perform_ocr(redacted_files)
+            if redacted_files and self.perform_ocr:
+                self.perform_ocr_process(redacted_files)
                 
-                print("\n=== Process Complete ===")
-                print(f"Scanned files are in: ./Scans/")
-                print(f"Redacted files are in: ./Redactions/")
-                print(f"OCR results are in: ./OCR/")
-            else:
-                print("Redaction failed. OCR was not performed.")
+            return True
         else:
-            print("No files were scanned. Process aborted.")
+            print("\nNo files were scanned. Process aborted.")
+            return False
+
+    def close(self):
+        """Safely close the scanner connection."""
+        try:
+            print("\nSafely closing scanner connection...")
+            self.scanner.close()
+            sane.exit()
+            print("Scanner connection closed successfully.")
+        except Exception as e:
+            print(f"Warning: Error while closing scanner: {e}")
+            print("The scanner may still show as busy. Try disconnecting and reconnecting it.")
+
+    def run(self):
+        """Run the complete workflow with the improved process."""
+        print("\n" + "="*70)
+        print("=== Form Scanner, Redactor, and OCR Tool ===")
+        print("="*70 + "\n")
+        
+        # Get initial preferences (OCR yes/no)
+        self.setup_initial_preferences()
+        
+        # Main processing loop
+        continue_scanning = True
+        
+        while continue_scanning:
+            success = self.process_single_form()
+            
+            print("\n" + "-"*70)
+            choice = input("Would you like to scan another form? [Y/n]: ").lower()
+            continue_scanning = choice != 'n'
+            print("-"*70 + "\n")
+        
+        # Safely close scanner connection before exiting
+        self.close()
+        
+        print("\n" + "="*70)
+        print("=== Process Complete ===")
+        print(f"Scanned files are in: ./Scans/")
+        print(f"Redacted files are in: ./Redactions/")
+        if self.perform_ocr:
+            print(f"OCR results are in: ./OCR/")
+        print("="*70 + "\n")
 
 def main():
     """Main entry point for the script."""
     scanner = FormScanner()
-    scanner.process()
+    scanner.run()
 
 if __name__ == "__main__":
     main()
