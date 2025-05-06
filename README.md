@@ -14,8 +14,10 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
 
    ```bash
    sudo apt-get update
-   sudo apt-get install -y sane sane-utils tesseract-ocr python3-pip python3-venv
+   sudo apt-get install -y sane sane-utils tesseract-ocr python3-pip python3-venv build-essential libsane-dev
    ```
+
+   The `build-essential` and `libsane-dev` packages are required for compiling the `python-sane` package.
 
 2. **Create a virtual environment (recommended):**
 
@@ -26,8 +28,14 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
 
 3. **Install required Python packages:**
 
+   For the main script (Option 1):
    ```bash
    pip install python-sane pillow pytesseract pdf2image reportlab
+   ```
+
+   For the alternative script (Option 2, no compilation required):
+   ```bash
+   pip install pillow pytesseract pdf2image reportlab
    ```
 
 4. **Verify scanner detection:**
@@ -37,6 +45,15 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
    ```
 
    This should list your scanner. If not, check that it's properly connected.
+
+   Example Detection:
+   ```
+   $ scanimage -L
+   
+   device `escl:https://192.168.1.24:443' is a Epson ET-4810 Series platen,adf scanner
+   device `epson2:net:192.168.1.24' is a Epson PID flatbed scanner
+   device `airscan:e0:EPSON ET-4810 Series' is a eSCL EPSON ET-4810 Series ip=192.168.1.24
+   ```
 
 5. **Create directory structure:**
 
@@ -55,6 +72,10 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
 
 ## Running the Script
 
+You have two options for running the scanner script:
+
+### Option 1: Using the python-sane based script (requires compilation)
+
 1. **Make the script executable:**
 
    ```bash
@@ -66,6 +87,24 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
    ```bash
    ./scan_redact_ocr.py
    ```
+
+### Option 2: Using the scanimage-based alternative (no compilation required)
+
+If you encounter issues with python-sane or prefer not to install build tools, use this alternative:
+
+1. **Make the alternative script executable:**
+
+   ```bash
+   chmod +x alternative_scanner.py
+   ```
+
+2. **Run the alternative script:**
+
+   ```bash
+   ./alternative_scanner.py
+   ```
+
+This alternative uses the command-line `scanimage` tool instead of the python-sane library and requires fewer dependencies.
 
 3. **Follow the prompts:**
    - Enter the 10-digit WID (student number)
