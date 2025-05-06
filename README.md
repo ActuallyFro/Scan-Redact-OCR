@@ -19,6 +19,11 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
 
    The `build-essential` and `libsane-dev` packages are required for compiling the `python-sane` package.
 
+   For HP scanners, also install:
+   ```bash
+   sudo apt-get install hplip
+   ```
+
 2. **Create a virtual environment (recommended):**
 
    ```bash
@@ -34,6 +39,11 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
    ```
 
    For the alternative script (Option 2, no compilation required):
+   ```bash
+   pip install pillow pytesseract pdf2image reportlab
+   ```
+
+   For the HP-optimized script (Option 3):
    ```bash
    pip install pillow pytesseract pdf2image reportlab
    ```
@@ -55,6 +65,11 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
    device `airscan:e0:EPSON ET-4810 Series' is a eSCL EPSON ET-4810 Series ip=192.168.1.24
    ```
 
+   For HP scanners, you can also use:
+   ```bash
+   hp-probe
+   ```
+
 5. **Create directory structure:**
 
    ```bash
@@ -72,7 +87,7 @@ This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ub
 
 ## Running the Script
 
-You have two options for running the scanner script:
+You have three options for running the scanner script:
 
 ### Option 1: Using the python-sane based script (requires compilation)
 
@@ -106,7 +121,39 @@ If you encounter issues with python-sane or prefer not to install build tools, u
 
 This alternative uses the command-line `scanimage` tool instead of the python-sane library and requires fewer dependencies.
 
-3. **Follow the prompts:**
+### Option 3: Using the HP-optimized script for HP scanners
+
+If you have an HP scanner (like the HP ScanJet Flow 7000 s3), use this script which utilizes HP's native tools:
+
+1. **Make sure you have HPLIP tools installed:**
+
+   ```bash
+   sudo apt-get install hplip
+   ```
+
+2. **Setup your HP scanner (if not already configured):**
+
+   ```bash
+   hp-setup
+   ```
+
+3. **Make the HP-optimized script executable:**
+
+   ```bash
+   chmod +x improved_scan_redact_ocr.py
+   ```
+
+4. **Run the HP-optimized script:**
+
+   ```bash
+   ./improved_scan_redact_ocr.py
+   ```
+
+This script uses `hp-scan` instead of `scanimage` and has better support for HP scanner features like duplex scanning.
+
+## Using the Scripts
+
+1. **Follow the prompts:**
    - Enter the 10-digit WID (student number)
    - Select Form Type (2 or 3)
    - Choose duplex scanning if available
@@ -141,6 +188,8 @@ The script will generate files with the following naming convention:
 
 - **SANE errors:** Check that your scanner is SANE-compatible. Run `scanimage -L` to verify.
 
+- **HP Scanner "Operation not supported" error:** Use the HP-optimized script (Option 3) which uses native HP tools instead of generic SANE interfaces.
+
 - **Image alignment issues:** Make sure your redaction overlays match the exact dimensions of your scanned forms (8.5" x 11").
 
 ## Additional Notes
@@ -169,3 +218,12 @@ THEN -- ensure you run: `source scan-env/bin/activate`
 
 THIS IS AS-IS Software! -- With that, there's a sane-scanner interface, or I/O disconnect bug. SO... "turn it off, and on again" has worked for my scanner to reuse the app!
 
+### 3. HP Scanner Issues
+
+If you have an HP scanner (like the HP ScanJet) and encounter errors with the regular scripts:
+
+1. Make sure HPLIP is installed: `sudo apt-get install hplip`
+2. Run HP setup utility: `hp-setup` 
+3. Use the HP-optimized script (Option 3): `./improved_scan_redact_ocr.py`
+
+This uses HP's native scanning tools which provide better support for HP hardware features.
