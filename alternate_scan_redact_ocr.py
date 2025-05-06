@@ -58,12 +58,26 @@ class FormScanner:
             self.devices = []
             for line in result.stdout.split('\n'):
                 if line.strip().startswith('device'):
-                    device_id = line.split("'")[1]
+                    device_id = line.split("'")[1] if "'" in line else line.split("device ")[1].strip()
                     self.devices.append(device_id)
-            
+
+            # If no devices were parsed but output wasn't empty, try the exact device string
+            # if not self.devices and result.stdout.strip():
             if not self.devices:
-                print("No scanners found. Please connect a scanner and try again.")
-                sys.exit(1)
+                # Special handling for HP scanners
+                if "HP" in result.stdout or "Hewlett-Packard" in result.stdout:
+                    # Try to extract the model from the output
+                    for line in result.stdout.split('\n'):
+                        if "HP" in line or "Hewlett-Packard" in line:
+                            model = line.split("HP_")[1].split(" ")[0] if "HP_" in line else "scanner"
+                            self.devices = [f"hpaio:/usb/{model}"]
+                            print(f"Detected HP scanner, using device ID: {self.devices[0]}")
+                            break
+                self.devices = [result.stdout.strip()]
+
+            # if not self.devices:
+            #     print("No scanners found. Please connect a scanner and try again.")
+            #     sys.exit(1)
             
             print("Available scanners:")
             for i, device in enumerate(self.devices):
@@ -88,7 +102,16 @@ class FormScanner:
             try:
                 result = subprocess.run(['scanimage', '--help', '-d', self.scanner_id], 
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                if 'duplex' in result.stdout.lower() or 'adf' in result.stdout.lower():
+                # if 'duplex' in result.stdout.lower() or 'adf' in result.stdout.lower():
+                # For HP scanners, check for ADF capability
+                if "HP" in self.scanner_id or "Hewlett-Packard" in self.scanner_id:
+                    # Run hp-scan with --help to check for duplex
+                    hp_result = subprocess.run(['hp-scan', '--help'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    if 'duplex' in hp_result.stdout.lower() or 'adf' in hp_result.stdout.lower():
+                        self.duplex_available = True
+                        print("HP scanner with duplex/ADF capability detected!")
+                        
+                elif 'duplex' in result.stdout.lower() or 'adf' in result.stdout.lower():
                     self.duplex_available = True
                     print("Duplex scanning may be available on this device!")
                 else:
@@ -146,11 +169,24 @@ class FormScanner:
     def scan_page(self, output_path, is_duplex=False):
         """Scan a single page using scanimage."""
         try:
-            # Build scanimage command
+            # Detect if device ID needs quotes (has spaces)
+            device_id = self.scanner_id
+            if ' ' in device_id:
+                # Try to extract just the device name without the description
+                if 'device ' in device_id.lower():
+                    device_id = device_id.split('device ')[1].split(' is')[0].strip()
+                    print(f"Extracted device ID: {device_id}")
+                else:
+                    # For HP devices, try to construct the proper device name
+                    if "HP" in device_id or "Hewlett-Packard" in device_id:
+                        device_id = f"hpaio:/usb/{device_id.split('HP_')[1].split(' ')[0]}"
+                        print(f"Using HP device ID: {device_id}")
+
             cmd = [
                 'scanimage',
                 '--progress',
-                '-d', self.scanner_id,
+                # '-d', self.scanner_id,
+                '-d', device_id,
                 '--format=png',
                 '--resolution=300',
                 '--mode=Color'
