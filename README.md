@@ -210,7 +210,7 @@ The script will generate files with the following naming convention:
 If you See:
 ```
 Traceback (most recent call last):
-  File "/home/numbat/My_Programming/OCR-Scanner-Form2s/./scan_redact_ocr.py", line 23, in <module>
+  File "/home/<USER>/PRISM/./PRISM.py", line 23, in <module>
     import sane
 ModuleNotFoundError: No module named 'sane'
 ```

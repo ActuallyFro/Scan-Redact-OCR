@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the path to your logo file
-logo_path="/home/numbat/My_Programming/OCR-Scanner-Form2s/resources/PRISM-Logo.png"
+logo_path="~/PRISM/resources/PRISM-Logo.png"
 
 # Check if feh is installed
 if ! command -v feh &> /dev/null; then
