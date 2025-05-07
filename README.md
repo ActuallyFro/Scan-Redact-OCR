@@ -1,4 +1,7 @@
-# Form Scanner, Redactor, and OCR - Installation & Usage Guide
+# Privacy Redating Image Scanning Middleware - Installation & Usage Guide
+
+![PRISM](./resources/PRISM-Logo.png)
+
 
 This guide will help you set up and use the Scan-to-Redact-to-OCR solution on Ubuntu 24.04.
 

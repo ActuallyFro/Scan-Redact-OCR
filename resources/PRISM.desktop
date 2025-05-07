@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Launch App
+Comment=Runs the OCR scanning and redaction script
+Path=/home/numbat/My_Programming/OCR-Scanner-Form2s/
+Exec=bash -c '/home/numbat/My_Programming/OCR-Scanner-Form2s/resources/./launch_with_fade.sh'
+Icon=/home/numbat/My_Programming/OCR-Scanner-Form2s/resources/PRISM-ICON_1024x1024.png
+Terminal=true
+Type=Application
+Categories=Office;Utilities;
