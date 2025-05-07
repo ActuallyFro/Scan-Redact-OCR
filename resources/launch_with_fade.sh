@@ -36,4 +36,4 @@ else
 fi
 
 # Activate the virtual environment and run your Python script in a new terminal
-gnome-terminal -- bash -c 'source ./scan-env/bin/activate && python3 /opt/PRISM.py; bash'
+gnome-terminal -- bash -c 'source ./scan-env/bin/activate && python3 /opt/PRISM/PRISM.py; bash'
