@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Open Folder
+Comment=Opens the redaction folder
+Path=/opt/PRISM/
+Exec=bash -c 'xdg-open /opt/PRISM/Redactions/'
+Icon=/opt/PRISM/resources/PRISM-Logo.png
+Terminal=true
+Type=Application
+Categories=Office;Utilities;
