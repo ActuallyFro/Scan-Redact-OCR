@@ -1,4 +1,4 @@
-# Privacy Redating Image Scanning Middleware - Installation & Usage Guide
+# Privacy Redacting Image Scanning Middleware - Installation & Usage Guide
 
 ![PRISM](./resources/PRISM-Logo.png)
 

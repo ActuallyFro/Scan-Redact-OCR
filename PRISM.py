@@ -40,7 +40,7 @@ def print_prism_banner():
     ██║     ██║  ██║██║███████║██║ ╚═╝ ██║
     ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝
     
-    Privacy Redating Image Scanning Middleware
+    Privacy Redacting Image Scanning Middleware
     """
     print(banner)
 
