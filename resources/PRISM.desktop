@@ -2,9 +2,9 @@
 Version=1.0
 Name=Launch App
 Comment=Runs the OCR scanning and redaction script
-Path=~/PRISM/
-Exec=bash -c '~/PRISM/resources/./launch_with_fade.sh'
-Icon=~/PRISM/resources/PRISM-ICON_1024x1024.png
+Path=/opt/PRISM/
+Exec=bash -c '/opt/PRISM/resources/./launch_with_fade.sh'
+Icon=/opt/PRISM/resources/PRISM-ICON_1024x1024.png
 Terminal=true
 Type=Application
 Categories=Office;Utilities;
