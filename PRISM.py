@@ -31,9 +31,25 @@ from reportlab.lib.pagesizes import letter
 from pdf2image import convert_from_path
 from pathlib import Path
 
+def print_prism_banner():
+    banner = r"""
+    ██████╗ ██████╗ ██╗███████╗███╗   ███╗
+    ██╔══██╗██╔══██╗██║██╔════╝████╗ ████║
+    ██████╔╝██████╔╝██║███████╗██╔████╔██║
+    ██╔═══╝ ██╔══██╗██║╚════██║██║╚██╔╝██║
+    ██║     ██║  ██║██║███████║██║ ╚═╝ ██║
+    ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝     ╚═╝
+    
+    Privacy Redating Image Scanning Middleware
+    """
+    print(banner)
+
 class FormScanner:
     def __init__(self):
         """Initialize the scanner application."""
+        # Display the PRISM banner
+        print_prism_banner()
+        
         self.today = datetime.datetime.now().strftime("%Y-%m-%d")
         self.create_directories()
         self.wid = ""
