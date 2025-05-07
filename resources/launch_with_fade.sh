@@ -24,4 +24,4 @@ if ps -p "$icon_pid" > /dev/null; then
 fi
 
 # Activate the virtual environment and run your Python script in a new terminal
-gnome-terminal -- bash -c 'source ./scan-env/bin/activate && python3 ./scan_redact_ocr.py; bash'
+gnome-terminal -- bash -c 'source ./scan-env/bin/activate && python3 ./PRISM.py; bash'
