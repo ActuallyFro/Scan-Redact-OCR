@@ -21,6 +21,7 @@ Install with:
 import os
 import sys
 import sane
+import re
 import datetime
 import argparse
 import pytesseract
@@ -37,6 +38,7 @@ class FormScanner:
         self.create_directories()
         self.wid = ""
         self.form_type = ""
+        self.scan_counter = self.get_next_scan_number()
         self.perform_ocr = True
         
         # Initialize SANE
@@ -96,6 +98,36 @@ class FormScanner:
         directories = ["./Scans", "./Redactions", "./OCR"]
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
+
+    def get_next_scan_number(self):
+        """Determine the next scan number based on existing files."""
+        max_scan_num = 0
+        
+        # Check existing files in the Scans directory
+        scan_dir = "./Scans"
+        if os.path.exists(scan_dir):
+            today_str = self.today
+            scan_pattern = re.compile(rf"{today_str}_Form\d+-\d+_scan(\d+)_[ab]_")
+            
+            for filename in os.listdir(scan_dir):
+                match = scan_pattern.search(filename)
+                if match:
+                    scan_num = int(match.group(1))
+                    if scan_num > max_scan_num:
+                        max_scan_num = scan_num
+        
+        # Start from 1 if no existing files found, otherwise use the next number
+        return max_scan_num + 1
+
+    def increment_scan_counter(self):
+        """Increment the scan counter after processing a form."""
+        self.scan_counter += 1
+
+    def get_filename_base(self):
+        """Generate the base filename for the current scan."""
+        # Format: YYYY-MM-DD_Form#-WID_scan#
+        return f"{self.today}_Form{self.form_type}-{self.wid}_scan{self.scan_counter:02d}"
+        # Note: Using :02d to zero-pad the scan number to at least 2 digits
 
     def setup_initial_preferences(self):
         """Get initial preferences from the user."""
@@ -203,6 +235,9 @@ class FormScanner:
         self.configure_scanner()
         scanned_files = []
         
+        # Get the base filename
+        base_filename = self.get_filename_base()
+        
         if self.use_duplex:
             # In duplex mode, we scan both sides at once
             input("Place the form in the scanner and press Enter to scan both sides...")
@@ -213,7 +248,7 @@ class FormScanner:
                 image = self.scanner.snap()
                 
                 # Save front side
-                filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_front.png"
+                filename_front = f"./Scans/{base_filename}_a_front.png"
                 image.save(filename_front)
                 scanned_files.append(filename_front)
                 print(f"Front saved to: {filename_front}")
@@ -221,7 +256,7 @@ class FormScanner:
                 # For duplex scanning, we should get a second image automatically
                 try:
                     image_back = self.scanner.snap()
-                    filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_back.png"
+                    filename_back = f"./Scans/{base_filename}_b_back.png"
                     image_back.save(filename_back)
                     scanned_files.append(filename_back)
                     print(f"Back saved to: {filename_back}")
@@ -240,7 +275,7 @@ class FormScanner:
                 print("Scanning front...")
                 self.scanner.start()
                 image = self.scanner.snap()
-                filename_front = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_front.png"
+                filename_front = f"./Scans/{base_filename}_a_front.png"
                 image.save(filename_front)
                 scanned_files.append(filename_front)
                 print(f"Front saved to: {filename_front}")
@@ -253,7 +288,7 @@ class FormScanner:
                 print("Scanning back...")
                 self.scanner.start()
                 image = self.scanner.snap()
-                filename_back = f"./Scans/{self.today}_Form{self.form_type}-{self.wid}_back.png"
+                filename_back = f"./Scans/{base_filename}_b_back.png"
                 image.save(filename_back)
                 scanned_files.append(filename_back)
                 print(f"Back saved to: {filename_back}")
@@ -286,7 +321,7 @@ class FormScanner:
                 scan = Image.open(scan_path)
                 
                 # Determine if this is a front or back page
-                is_front = "_front.png" in scan_path
+                is_front = "_a_front.png" in scan_path
                 overlay = front_overlay if is_front else back_overlay
                 
                 # Resize overlay to match scan dimensions if needed
@@ -349,7 +384,7 @@ class FormScanner:
             
             if redacted_files and self.perform_ocr:
                 self.perform_ocr_process(redacted_files)
-                
+            
             return True
         else:
             print("\nNo files were scanned. Process aborted.")
@@ -380,6 +415,9 @@ class FormScanner:
         
         while continue_scanning:
             success = self.process_single_form()
+            
+            if success:
+                self.increment_scan_counter()
             
             print("\n" + "-"*70)
             choice = input("Would you like to scan another form? [Y/n]: ").lower()
