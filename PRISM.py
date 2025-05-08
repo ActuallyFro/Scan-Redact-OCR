@@ -405,17 +405,17 @@ class FormScanner:
         self.get_form_info()
         scanned_files = self.scan_documents()
 
-                if self.form_type == '0':
-                    # For Memo documents, skip redaction but proceed with OCR if enabled
-                    if self.perform_ocr:
-                        print("\nSkipping redaction for Memo document.")
-                        self.perform_ocr_process(scanned_files)
-                    else:
-                        # Normal workflow for form types 2 and 3
-                        redacted_files = self.apply_redactions(scanned_files)
+        if self.form_type == '0':
+            # For Memo documents, skip redaction but proceed with OCR if enabled
+            if self.perform_ocr:
+                print("\nSkipping redaction for Memo document.")
+                self.perform_ocr_process(scanned_files)
+            else:
+                # Normal workflow for form types 2 and 3
+                redacted_files = self.apply_redactions(scanned_files)
 
-                    if redacted_files and self.perform_ocr:
-                        self.perform_ocr_process(redacted_files)
+            if redacted_files and self.perform_ocr:
+                self.perform_ocr_process(redacted_files)
             return True
         else:
             print("\nNo files were scanned. Process aborted.")
