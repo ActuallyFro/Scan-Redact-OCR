@@ -191,11 +191,11 @@ class FormScanner:
         
         # Form type
         while True:
-            form_type = input("Enter Form Type (2 or 3): ")
-            if form_type in ['2', '3']:
+            form_type = input("Enter Form Type (0: Skip/None, 2, or 3): ")
+            if form_type in ['0', '2', '3']:
                 self.form_type = form_type
                 break
-            print("Form Type must be either 2 or 3. Please try again.")
+            print("Form Type must be 0 (Skip/None), 2, or 3. Please try again.")
         
         # Determine scanning mode
         if self.duplex_available:
@@ -363,7 +363,15 @@ class FormScanner:
         print("\n" + "-"*70)
         print("Performing OCR")
         print("-"*70 + "\n")
-        
+
+        # For Memo documents (form_type = 0), redacted_files actually contains the original scanned files
+        # We need to adjust the output path for OCR results
+        path_prefix = "./OCR/OCR_"
+        path_replace = "./Redactions/REDACTED_" if self.form_type != '0' else "./Scans/"
+
+        # Process each file
+        ocr_files = []
+
         for redacted_path in redacted_files:
             try:
                 # Extract text using Tesseract
@@ -371,7 +379,7 @@ class FormScanner:
                 text = pytesseract.image_to_string(image)
                 
                 # Save as plain text
-                text_path = redacted_path.replace("./Redactions/REDACTED_", "./OCR/OCR_").replace(".png", ".txt")
+                text_path = redacted_path.replace(path_replace, path_prefix).replace(".png", ".txt")
                 with open(text_path, "w") as f:
                     f.write(text)
                 print(f"OCR text saved to: {text_path}")
@@ -386,20 +394,28 @@ class FormScanner:
                 c.save()
                 
                 print(f"OCR PDF saved to: {pdf_path}")
+                ocr_files.append(pdf_path)
                 
             except Exception as e:
                 print(f"Error performing OCR on {redacted_path}: {e}")
+        return ocr_files
 
     def process_single_form(self):
         """Process a single form through scanning, redaction, and optional OCR."""
         self.get_form_info()
         scanned_files = self.scan_documents()
-        
-        if scanned_files:
-            redacted_files = self.apply_redactions(scanned_files)
-            
-            if redacted_files and self.perform_ocr:
-                self.perform_ocr_process(redacted_files)
+
+            if self.form_type == '0':
+                # For Memo documents, skip redaction but proceed with OCR if enabled
+                if self.perform_ocr:
+                    print("\nSkipping redaction for Memo document.")
+                    self.perform_ocr_process(scanned_files)
+            else:
+                # Normal workflow for form types 2 and 3
+                redacted_files = self.apply_redactions(scanned_files)
+                
+                if redacted_files and self.perform_ocr:
+                    self.perform_ocr_process(redacted_files)
             
             return True
         else:

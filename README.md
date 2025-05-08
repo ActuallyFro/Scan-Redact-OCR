@@ -158,8 +158,9 @@ This script uses `hp-scan` instead of `scanimage` and has better support for HP 
 
 1. **Follow the prompts:**
    - Enter the 10-digit WID (student number)
-   - Select Form Type (2 or 3)
-   - Choose duplex scanning if available
+   - Select Form Type:
+     - 0 (Skip/None) for Memo documents with no redaction
+     - 2 or 3 for standard forms with redaction   - Choose duplex scanning if available
    - Specify how many forms to scan
    - Follow scanning instructions for each form
 
@@ -167,12 +168,14 @@ This script uses `hp-scan` instead of `scanimage` and has better support for HP 
 
 The script will generate files with the following naming convention:
 
+For standard forms (type 2 or 3):
 - **Scanned images:**
   `./Scans/YYYY-MM-DD_Form#-WID_form#_[front|back].png`
 
 - **Redacted images:**
   `./Redactions/REDACTED_YYYY-MM-DD_Form#-WID_form#_[front|back].png`
 
+For all form types including Memo documents (type 0):
 - **OCR text files:**
   `./OCR/OCR_YYYY-MM-DD_Form#-WID_form#_[front|back].txt`
 
