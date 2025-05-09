@@ -321,6 +321,28 @@ class FormScanner:
         
         redacted_files = []
         
+        # Skip redaction for Memo (form_type = 0)
+        if self.form_type == '0':
+            print("Form type 0 (Memo) - copying scans to redactions folder without applying overlay.")
+            
+            for scan_path in scanned_files:
+                try:
+                    # Load the original scan
+                    scan = Image.open(scan_path)
+                    
+                    # Save to redactions folder with the REDACTED_ prefix
+                    redacted_path = scan_path.replace("./Scans/", "./Redactions/REDACTED_")
+                    scan.save(redacted_path)
+                    
+                    redacted_files.append(redacted_path)
+                    print(f"Copy saved to: {redacted_path}")
+                    
+                except Exception as e:
+                    print(f"Error copying {scan_path} to redactions folder: {e}")
+            
+            return redacted_files
+        
+        # For form types 2 and 3, apply actual redaction overlays
         # Check if redaction overlays exist
         front_overlay_path = f"./redaction-overlays/Form-{self.form_type}-front.png"
         back_overlay_path = f"./redaction-overlays/Form-{self.form_type}-back.png"
@@ -363,15 +385,7 @@ class FormScanner:
         print("\n" + "-"*70)
         print("Performing OCR")
         print("-"*70 + "\n")
-
-        # For Memo documents (form_type = 0), redacted_files actually contains the original scanned files
-        # We need to adjust the output path for OCR results
-        path_prefix = "./OCR/OCR_"
-        path_replace = "./Redactions/REDACTED_" if self.form_type != '0' else "./Scans/"
-
-        # Process each file
-        ocr_files = []
-
+        
         for redacted_path in redacted_files:
             try:
                 # Extract text using Tesseract
@@ -379,7 +393,7 @@ class FormScanner:
                 text = pytesseract.image_to_string(image)
                 
                 # Save as plain text
-                text_path = redacted_path.replace(path_replace, path_prefix).replace(".png", ".txt")
+                text_path = redacted_path.replace("./Redactions/REDACTED_", "./OCR/OCR_").replace(".png", ".txt")
                 with open(text_path, "w") as f:
                     f.write(text)
                 print(f"OCR text saved to: {text_path}")
@@ -394,28 +408,22 @@ class FormScanner:
                 c.save()
                 
                 print(f"OCR PDF saved to: {pdf_path}")
-                ocr_files.append(pdf_path)
                 
             except Exception as e:
                 print(f"Error performing OCR on {redacted_path}: {e}")
-        return ocr_files
 
     def process_single_form(self):
         """Process a single form through scanning, redaction, and optional OCR."""
         self.get_form_info()
         scanned_files = self.scan_documents()
-
-        if self.form_type == '0':
-            # For Memo documents, skip redaction but proceed with OCR if enabled
-            if self.perform_ocr:
-                print("\nSkipping redaction for Memo document.")
-                self.perform_ocr_process(scanned_files)
-            else:
-                # Normal workflow for form types 2 and 3
-                redacted_files = self.apply_redactions(scanned_files)
-
+        
+        if scanned_files:
+            # Apply redactions (or copy files for Memo)
+            redacted_files = self.apply_redactions(scanned_files)
+            
             if redacted_files and self.perform_ocr:
                 self.perform_ocr_process(redacted_files)
+            
             return True
         else:
             print("\nNo files were scanned. Process aborted.")
